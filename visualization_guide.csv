@@ -1,0 +1,5 @@
+Chart_Type,Data_Source,Recommended_Tool
+Risk Distribution,sample_flight_predictions.csv,Plotly Pie Chart
+Feature Importance,feature_importance.csv,Tableau Bar Chart
+Model Comparison,model_comparison.csv,Plotly Bar Chart
+Confusion Matrix,confusion_matrix.csv,Seaborn Heatmap

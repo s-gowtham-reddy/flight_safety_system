@@ -1,0 +1,16 @@
+Feature,Importance
+Destination_Weather_Severity,0.2124417210084545
+Departure_Weather_Severity,0.17585821583516212
+Days_Since_Maintenance,0.12020787890275784
+Wind_Speed_kmh,0.1192437075306574
+Pilot_Experience_Hours,0.06341429489677998
+Aircraft_Age_Years,0.060170058254916184
+Route_Complexity,0.04762417153704759
+Passenger_Count,0.04077483027396199
+Cargo_Weight_tons,0.039027223621750526
+Flight_Distance_km,0.03692207662084634
+Flight_Hours,0.0367320948489584
+Aircraft_Type,0.01639438245982654
+Time_of_Day,0.011576276015374944
+Destination_Airport_Category,0.010295342151800698
+Departure_Airport_Category,0.009317726041704982

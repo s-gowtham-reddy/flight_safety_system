@@ -1,0 +1,51 @@
+Flight_ID,Risk_Percentage,Risk_Level,Action,Actual_Risk
+FL-1000,0.07,LOW,Cleared for takeoff,Safe
+FL-1001,2.52,LOW,Cleared for takeoff,Safe
+FL-1002,0.12,LOW,Cleared for takeoff,Safe
+FL-1003,0.07,LOW,Cleared for takeoff,Safe
+FL-1004,20.64,LOW,Cleared for takeoff,High Risk
+FL-1005,0.39,LOW,Cleared for takeoff,Safe
+FL-1006,0.13,LOW,Cleared for takeoff,Safe
+FL-1007,0.17,LOW,Cleared for takeoff,Safe
+FL-1008,2.49,LOW,Cleared for takeoff,Safe
+FL-1009,0.08,LOW,Cleared for takeoff,Safe
+FL-1010,3.82,LOW,Cleared for takeoff,Safe
+FL-1011,0.59,LOW,Cleared for takeoff,Safe
+FL-1012,0.14,LOW,Cleared for takeoff,Safe
+FL-1013,0.15,LOW,Cleared for takeoff,Safe
+FL-1014,0.47,LOW,Cleared for takeoff,Safe
+FL-1015,2.44,LOW,Cleared for takeoff,Safe
+FL-1016,6.24,LOW,Cleared for takeoff,Safe
+FL-1017,0.33,LOW,Cleared for takeoff,Safe
+FL-1018,1.13,LOW,Cleared for takeoff,Safe
+FL-1019,0.37,LOW,Cleared for takeoff,Safe
+FL-1020,0.3,LOW,Cleared for takeoff,Safe
+FL-1021,0.69,LOW,Cleared for takeoff,Safe
+FL-1022,0.09,LOW,Cleared for takeoff,Safe
+FL-1023,0.06,LOW,Cleared for takeoff,Safe
+FL-1024,0.38,LOW,Cleared for takeoff,Safe
+FL-1025,84.31,HIGH,Immediate action required,High Risk
+FL-1026,0.59,LOW,Cleared for takeoff,Safe
+FL-1027,0.26,LOW,Cleared for takeoff,Safe
+FL-1028,0.09,LOW,Cleared for takeoff,Safe
+FL-1029,0.12,LOW,Cleared for takeoff,Safe
+FL-1030,12.86,LOW,Cleared for takeoff,High Risk
+FL-1031,1.25,LOW,Cleared for takeoff,Safe
+FL-1032,0.14,LOW,Cleared for takeoff,Safe
+FL-1033,0.08,LOW,Cleared for takeoff,Safe
+FL-1034,0.14,LOW,Cleared for takeoff,Safe
+FL-1035,0.18,LOW,Cleared for takeoff,Safe
+FL-1036,0.4,LOW,Cleared for takeoff,Safe
+FL-1037,0.16,LOW,Cleared for takeoff,Safe
+FL-1038,0.49,LOW,Cleared for takeoff,Safe
+FL-1039,0.22,LOW,Cleared for takeoff,Safe
+FL-1040,0.7,LOW,Cleared for takeoff,Safe
+FL-1041,1.77,LOW,Cleared for takeoff,Safe
+FL-1042,0.1,LOW,Cleared for takeoff,Safe
+FL-1043,0.37,LOW,Cleared for takeoff,Safe
+FL-1044,0.34,LOW,Cleared for takeoff,Safe
+FL-1045,0.6,LOW,Cleared for takeoff,Safe
+FL-1046,0.49,LOW,Cleared for takeoff,Safe
+FL-1047,12.65,LOW,Cleared for takeoff,High Risk
+FL-1048,0.11,LOW,Cleared for takeoff,Safe
+FL-1049,0.4,LOW,Cleared for takeoff,Safe

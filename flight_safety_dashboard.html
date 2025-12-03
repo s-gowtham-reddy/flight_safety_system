@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Safety Risk Analysis Dashboard</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+            font-size: 1.1em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .green { color: #27ae60; }
+        .yellow { color: #f39c12; }
+        .red { color: #e74c3c; }
+        .blue { color: #3498db; }
+
+        .chart-container {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .alert-box {
+            background: #fff3cd;
+            border-left: 5px solid #f39c12;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .alert-box.danger {
+            background: #f8d7da;
+            border-left-color: #e74c3c;
+        }
+
+        .alert-box.success {
+            background: #d4edda;
+            border-left-color: #27ae60;
+        }
+
+        .flight-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .flight-table th {
+            background: #3498db;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .flight-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .flight-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .risk-badge {
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+
+        .risk-low { background: #d4edda; color: #27ae60; }
+        .risk-medium { background: #fff3cd; color: #f39c12; }
+        .risk-high { background: #f8d7da; color: #e74c3c; }
+
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 30px;
+            padding: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>✈️ Integrated Flight Safety & Risk Analysis</h1>
+            <p>Real-time Predictive Risk Monitoring System | ML-Powered Aviation Safety</p>
+        </div>
+
+        <!-- Key Statistics -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Model Accuracy</div>
+                <div class="stat-value blue">97.2%</div>
+                <p style="color: #7f8c8d; margin-top: 10px;">Gradient Boosting</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Total Flights Monitored</div>
+                <div class="stat-value">5,000</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">High Risk Detected</div>
+                <div class="stat-value red">304</div>
+                <p style="color: #7f8c8d; margin-top: 10px;">6.1% of flights</p>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">F1-Score</div>
+                <div class="stat-value green">0.714</div>
+            </div>
+        </div>
+
+        <!-- Alert System -->
+        <div class="alert-box danger">
+            <strong>🚨 ALERT:</strong> Flight AI-308 detected with 85% risk score. Weather conditions at destination critical. Immediate review required.
+        </div>
+
+        <!-- Main Charts Grid -->
+        <div class="grid-2">
+            <!-- Model Comparison Chart -->
+            <div class="chart-container">
+                <div id="modelComparisonChart"></div>
+            </div>
+
+            <!-- Risk Gauge -->
+            <div class="chart-container">
+                <div id="riskGauge"></div>
+            </div>
+        </div>
+
+        <!-- Feature Importance -->
+        <div class="chart-container">
+            <div id="featureImportanceChart"></div>
+        </div>
+
+        <!-- Risk Distribution -->
+        <div class="grid-2">
+            <div class="chart-container">
+                <div id="riskDistributionChart"></div>
+            </div>
+
+            <div class="chart-container">
+                <h3 style="margin-bottom: 20px; color: #2c3e50;">📊 System Performance Metrics</h3>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 10px; margin-bottom: 15px;">
+                    <strong>Cross-Validation Accuracy:</strong> 96.60% ± 0.96%
+                </div>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 10px; margin-bottom: 15px;">
+                    <strong>ROC-AUC Score:</strong> 0.9847
+                </div>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 10px; margin-bottom: 15px;">
+                    <strong>False Positives:</strong> 2 flights (0.2%)
+                </div>
+                <div style="padding: 15px; background: #f8f9fa; border-radius: 10px;">
+                    <strong>False Negatives:</strong> 26 flights (2.6%)
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Flight Predictions Table -->
+        <div class="chart-container">
+            <h3 style="margin-bottom: 20px; color: #2c3e50;">🛫 Live Flight Risk Predictions</h3>
+            <table class="flight-table">
+                <thead>
+                    <tr>
+                        <th>Flight ID</th>
+                        <th>Route</th>
+                        <th>Risk Score (%)</th>
+                        <th>Risk Level</th>
+                        <th>Action Required</th>
+                        <th>Top Risk Factor</th>
+                    </tr>
+                </thead>
+                <tbody id="flightTableBody">
+                    <!-- Will be populated by JavaScript -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p><strong>Developed by:</strong> Syamala Gowtham Reddy</p>
+            <p>Sathyabama Institute of Science and Technology | B.E. Computer Science & Engineering (Data Science)</p>
+            <p style="margin-top: 10px; opacity: 0.8;">Powered by Machine Learning: Logistic Regression | Random Forest | Gradient Boosting | Ensemble</p>
+        </div>
+    </div>
+
+    <script>
+        // Model Comparison Chart
+        const modelComparisonData = [{
+            x: ['Logistic Regression', 'Random Forest', 'Gradient Boosting', 'Ensemble'],
+            y: [86.80, 95.40, 97.20, 96.90],
+            type: 'bar',
+            marker: {
+                color: ['#3498db', '#9b59b6', '#27ae60', '#e67e22'],
+            },
+            text: ['86.8%', '95.4%', '97.2%', '96.9%'],
+            textposition: 'outside',
+        }];
+
+        const modelComparisonLayout = {
+            title: '<b>Model Performance Comparison</b>',
+            xaxis: { title: 'Machine Learning Model' },
+            yaxis: { title: 'Accuracy (%)' },
+            plot_bgcolor: '#f8f9fa',
+            paper_bgcolor: 'white',
+        };
+
+        Plotly.newPlot('modelComparisonChart', modelComparisonData, modelComparisonLayout, {responsive: true});
+
+        // Risk Gauge
+        const riskGaugeData = [{
+            type: "indicator",
+            mode: "gauge+number+delta",
+            value: 85,
+            title: { text: "<b>Sample Flight Risk Score</b><br><span style='font-size:0.8em'>Flight AI-308</span>", font: { size: 18 } },
+            delta: { reference: 50 },
+            gauge: {
+                axis: { range: [null, 100], tickwidth: 1 },
+                bar: { color: "#e74c3c" },
+                steps: [
+                    { range: [0, 30], color: "#d4edda" },
+                    { range: [30, 70], color: "#fff3cd" },
+                    { range: [70, 100], color: "#f8d7da" }
+                ],
+                threshold: {
+                    line: { color: "red", width: 4 },
+                    thickness: 0.75,
+                    value: 70
+                }
+            }
+        }];
+
+        const riskGaugeLayout = {
+            paper_bgcolor: 'white',
+            height: 350
+        };
+
+        Plotly.newPlot('riskGauge', riskGaugeData, riskGaugeLayout, {responsive: true});
+
+        // Feature Importance Chart
+        const featureImportanceData = [{
+            type: 'bar',
+            x: [21.24, 17.59, 12.02, 11.92, 6.34, 6.02, 4.76],
+            y: ['Destination Weather', 'Departure Weather', 'Days Since Maintenance', 
+                'Wind Speed', 'Pilot Experience', 'Aircraft Age', 'Route Complexity'],
+            orientation: 'h',
+            marker: {
+                color: [21.24, 17.59, 12.02, 11.92, 6.34, 6.02, 4.76],
+                colorscale: 'Reds',
+            },
+            text: ['21.24%', '17.59%', '12.02%', '11.92%', '6.34%', '6.02%', '4.76%'],
+            textposition: 'outside',
+        }];
+
+        const featureImportanceLayout = {
+            title: '<b>Top Risk Factors - Feature Importance</b>',
+            xaxis: { title: 'Contribution to Risk Prediction (%)' },
+            plot_bgcolor: '#f8f9fa',
+            paper_bgcolor: 'white',
+            height: 400
+        };
+
+        Plotly.newPlot('featureImportanceChart', featureImportanceData, featureImportanceLayout, {responsive: true});
+
+        // Risk Distribution Pie Chart
+        const riskDistributionData = [{
+            values: [2503, 2193, 304],
+            labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+            type: 'pie',
+            marker: {
+                colors: ['#27ae60', '#f39c12', '#e74c3c']
+            },
+            textinfo: 'label+percent',
+            textfont: { size: 14 },
+            hole: 0.4
+        }];
+
+        const riskDistributionLayout = {
+            title: '<b>Flight Risk Level Distribution</b>',
+            paper_bgcolor: 'white',
+            height: 400
+        };
+
+        Plotly.newPlot('riskDistributionChart', riskDistributionData, riskDistributionLayout, {responsive: true});
+
+        // Populate Flight Table
+        const flights = [
+            {id: 'AI-1001', route: 'Mumbai → Delhi', risk: 12.5, level: 'LOW', action: 'Cleared', factor: 'Clear weather'},
+            {id: 'AI-1002', route: 'Delhi → Kolkata', risk: 45.2, level: 'MEDIUM', action: 'Review', factor: 'Moderate winds'},
+            {id: 'AI-1003', route: 'Chennai → Bangalore', risk: 8.3, level: 'LOW', action: 'Cleared', factor: 'Recent maintenance'},
+            {id: 'AI-1004', route: 'Hyderabad → Mumbai', risk: 85.7, level: 'HIGH', action: 'Delay', factor: 'Severe weather'},
+            {id: 'AI-1005', route: 'Bangalore → Chennai', risk: 22.1, level: 'LOW', action: 'Cleared', factor: 'Experienced pilot'},
+            {id: 'AI-1006', route: 'Kolkata → Delhi', risk: 55.8, level: 'MEDIUM', action: 'Review', factor: 'Maintenance due'},
+            {id: 'AI-1007', route: 'Mumbai → Hyderabad', risk: 15.9, level: 'LOW', action: 'Cleared', factor: 'New aircraft'},
+            {id: 'AI-1008', route: 'Delhi → Mumbai', risk: 72.3, level: 'HIGH', action: 'Inspect', factor: 'High winds'},
+            {id: 'AI-1009', route: 'Bangalore → Hyderabad', risk: 38.6, level: 'MEDIUM', action: 'Monitor', factor: 'Night flight'},
+            {id: 'AI-1010', route: 'Chennai → Mumbai', risk: 19.4, level: 'LOW', action: 'Cleared', factor: 'Short distance'}
+        ];
+
+        const tableBody = document.getElementById('flightTableBody');
+        flights.forEach(flight => {
+            const row = document.createElement('tr');
+            const riskClass = flight.level === 'LOW' ? 'risk-low' : flight.level === 'MEDIUM' ? 'risk-medium' : 'risk-high';
+
+            row.innerHTML = `
+                <td><strong>${flight.id}</strong></td>
+                <td>${flight.route}</td>
+                <td><strong>${flight.risk}%</strong></td>
+                <td><span class="risk-badge ${riskClass}">${flight.level}</span></td>
+                <td>${flight.action}</td>
+                <td>${flight.factor}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    </script>
+</body>
+</html>
