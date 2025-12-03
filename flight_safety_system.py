@@ -74,21 +74,28 @@ def create_aviation_dataset(n_samples=5000):
 # ============================================================================
 
 def preprocess_data(df):
-    """Preprocess and prepare data for modeling"""
+    """Preprocess and prepare data for ML models"""
     X = df.drop(['Risk_Level', 'High_Risk'], axis=1)
     y = df['High_Risk']
-
+    
+    # Create label encoders for categorical columns
     categorical_columns = ['Aircraft_Type', 'Time_of_Day', 'Route_Complexity', 
                           'Departure_Airport_Category', 'Destination_Airport_Category']
-
+    
+    label_encoders = {}
     for col in categorical_columns:
         le = LabelEncoder()
         X[col] = le.fit_transform(X[col])
-
+        label_encoders[col] = le
+    
+    # Create and fit scaler
     scaler = StandardScaler()
-    X_scaled = pd.DataFrame(scaler.fit_transform(X), columns=X.columns)
+    X_scaled = scaler.fit_transform(X)
+    X = pd.DataFrame(X_scaled, columns=X.columns)
+    
+    # RETURN SCALER AND ENCODERS
+    return X, y, scaler, label_encoders
 
-    return X_scaled, y
 
 # ============================================================================
 # MODEL TRAINING
@@ -411,7 +418,7 @@ if __name__ == "__main__":
     print(f"   ✓ Dataset created: {df.shape[0]} flights")
 
     print("\n2. Preprocessing data...")
-    X, y = preprocess_data(df)
+    X, y, scaler, label_encoders = preprocess_data(df)
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
     print(f"   ✓ Training: {len(X_train)}, Test: {len(X_test)}")
 
@@ -428,3 +435,33 @@ if __name__ == "__main__":
     print("\n✅ System Ready for Deployment!")
 
     generate_comprehensive_dashboard(df, X, y, X_test, y_test, trained_models, results)
+    # ADD AT END OF flight_safety_system.py
+import joblib
+import os
+
+print("\n" + "="*70)
+print("SAVING TRAINED MODELS FOR FUTURE USE")
+print("="*70)
+
+# Create saved_models folder
+os.makedirs("saved_models", exist_ok=True)
+
+# Save all trained models
+joblib.dump(trained_models, "saved_models/trained_models.pkl")
+print("✓ Trained models saved")
+
+# Save the scaler
+joblib.dump(scaler, "saved_models/scaler.pkl")
+print("✓ StandardScaler saved")
+
+# Save label encoders
+joblib.dump(label_encoders, "saved_models/label_encoders.pkl")
+print("✓ Label encoders saved")
+
+# Save feature names
+joblib.dump(list(X.columns), "saved_models/feature_names.pkl")
+print("✓ Feature names saved")
+
+print("\n✅ ALL MODELS SAVED!")
+print("   Location: saved_models/")
+print("   Now use 'predict_new_flights.py' for predictions")

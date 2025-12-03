@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Flight Risk Prediction</title>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Segoe UI';background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:20px;min-height:100vh}
+        .container{max-width:1000px;margin:0 auto}
+        .header{background:white;padding:30px;border-radius:15px;margin-bottom:30px;box-shadow:0 8px 32px rgba(0,0,0,0.1)}
+        .header h1{color:#2c3e50;margin-bottom:10px}
+        .alert{background:#27ae60;color:white;padding:25px;border-radius:15px;margin-bottom:30px;font-size:1.2em;font-weight:bold}
+        .risk-card{background:white;padding:30px;border-radius:15px;text-align:center;margin-bottom:30px;border-top:5px solid #27ae60;box-shadow:0 8px 32px rgba(0,0,0,0.1)}
+        .risk-value{font-size:3.5em;font-weight:bold;color:#27ae60;margin:20px 0}
+        .card{background:white;padding:25px;border-radius:15px;box-shadow:0 8px 32px rgba(0,0,0,0.1);margin-bottom:30px}
+        .card h3{color:#2c3e50;margin-bottom:20px;border-bottom:2px solid #667eea;padding-bottom:10px}
+        .chart{height:350px}
+        .models{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-top:20px}
+        .model-box{background:#f8f9fa;padding:20px;border-radius:10px;text-align:center;border-top:3px solid #667eea}
+        .model-risk{font-size:1.8em;font-weight:bold;margin:10px 0;color:#e74c3c}
+        .footer{text-align:center;color:white;margin-top:30px}
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="header">
+        <h1>✈️ Flight Risk Prediction</h1>
+        <p>Boeing737 | 1200km</p>
+    </div>
+    
+    <div class="alert">✅ CLEARED - Risk: 0.23%</div>
+    
+    <div class="risk-card">
+        <div style="font-size:1.5em;color:#2c3e50;font-weight:bold">LOW RISK</div>
+        <div class="risk-value">0.23%</div>
+    </div>
+    
+    <div class="card">
+        <h3>📊 Model Predictions</h3>
+        <div id="chart" class="chart"></div>
+    </div>
+    
+    <div class="card">
+        <h3>🎯 Individual Models</h3>
+        <div class="models">
+<div class="model-box" style="border-top-color:#27ae60"><div>Logistic Regression</div><div class="model-risk" style="color:#27ae60">0.6%</div></div><div class="model-box" style="border-top-color:#27ae60"><div>Random Forest</div><div class="model-risk" style="color:#27ae60">0.0%</div></div><div class="model-box" style="border-top-color:#27ae60"><div>Gradient Boosting</div><div class="model-risk" style="color:#27ae60">0.08%</div></div><div class="model-box" style="border-top-color:#27ae60"><div>Ensemble</div><div class="model-risk" style="color:#27ae60">0.23%</div></div>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <p>Prediction using trained ensemble models</p>
+    </div>
+</div>
+
+<script>
+var data = {
+    x: ["Logistic Regression", "Random Forest", "Gradient Boosting", "Ensemble"],
+    y: [0.6, 0.0, 0.08, 0.23],
+    type: 'bar',
+    marker: {color: [0.6, 0.0, 0.08, 0.23], colorscale: 'Reds', showscale: true}
+};
+Plotly.newPlot('chart', [data], {yaxis:{range:[0,105]}}, {responsive:true});
+</script>
+</body>
+</html>
