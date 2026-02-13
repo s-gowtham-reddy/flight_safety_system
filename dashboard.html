@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Safety Intelligence Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0e27;
+            --bg-secondary: #111638;
+            --bg-card: rgba(17, 22, 56, 0.8);
+            --bg-glass: rgba(255, 255, 255, 0.03);
+            --border: rgba(255, 255, 255, 0.06);
+            --cyan: #00d4ff;
+            --magenta: #ff006e;
+            --green: #00ff88;
+            --yellow: #ffbe0b;
+            --orange: #fb5607;
+            --red: #ff3366;
+            --text: #e8eaed;
+            --text-dim: #8892b0;
+            --text-bright: #ffffff;
+            --glow-cyan: 0 0 20px rgba(0, 212, 255, 0.3);
+            --glow-green: 0 0 20px rgba(0, 255, 136, 0.3);
+            --glow-red: 0 0 20px rgba(255, 51, 102, 0.3);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* Animated background */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 20%, rgba(0, 212, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(255, 0, 110, 0.06) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(0, 255, 136, 0.04) 0%, transparent 50%);
+            z-index: 0;
+            animation: bgPulse 8s ease-in-out infinite alternate;
+        }
+
+        @keyframes bgPulse {
+            0% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        .app { position: relative; z-index: 1; padding: 20px; max-width: 1800px; margin: 0 auto; }
+
+        /* ---- HEADER ---- */
+        .header {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 28px 40px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            animation: slideDown 0.6s ease-out;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .header-left { display: flex; align-items: center; gap: 18px; }
+
+        .logo {
+            width: 52px; height: 52px;
+            background: linear-gradient(135deg, var(--cyan), var(--magenta));
+            border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 26px;
+            box-shadow: var(--glow-cyan);
+            animation: logoFloat 3s ease-in-out infinite;
+        }
+
+        @keyframes logoFloat {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-4px); }
+        }
+
+        .header-title { font-size: 1.6em; font-weight: 800; letter-spacing: -0.5px; }
+        .header-title span { background: linear-gradient(135deg, var(--cyan), var(--green)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .header-subtitle { font-size: 0.82em; color: var(--text-dim); margin-top: 2px; font-weight: 400; }
+
+        .header-right { display: flex; align-items: center; gap: 24px; }
+
+        .live-badge {
+            display: flex; align-items: center; gap: 8px;
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            padding: 8px 18px;
+            border-radius: 30px;
+            font-size: 0.82em;
+            font-weight: 600;
+            color: var(--green);
+        }
+
+        .live-dot {
+            width: 8px; height: 8px;
+            background: var(--green);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
+            50% { opacity: 0.6; box-shadow: 0 0 0 8px rgba(0, 255, 136, 0); }
+        }
+
+        .cycle-info { text-align: right; }
+        .cycle-num { font-size: 1.5em; font-weight: 800; color: var(--cyan); }
+        .cycle-label { font-size: 0.72em; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1.5px; }
+
+        /* ---- STATUS BAR ---- */
+        .status-bar {
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.1), rgba(0, 255, 136, 0.1));
+            border: 1px solid rgba(0, 212, 255, 0.2);
+            border-radius: 14px;
+            padding: 14px 28px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 0.88em;
+            animation: slideDown 0.7s ease-out;
+        }
+
+        .status-bar .status-text { font-weight: 600; color: var(--green); }
+        .status-bar .status-text .model-name { color: var(--cyan); }
+        .status-bar .uptime { color: var(--text-dim); }
+
+        /* ---- KPI CARDS ---- */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 1200px) { .kpi-grid { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 768px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+
+        .kpi-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 22px;
+            text-align: center;
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: fadeUp 0.5s ease-out backwards;
+        }
+
+        .kpi-card:nth-child(1) { animation-delay: 0.1s; }
+        .kpi-card:nth-child(2) { animation-delay: 0.15s; }
+        .kpi-card:nth-child(3) { animation-delay: 0.2s; }
+        .kpi-card:nth-child(4) { animation-delay: 0.25s; }
+        .kpi-card:nth-child(5) { animation-delay: 0.3s; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(0, 212, 255, 0.3);
+            box-shadow: 0 8px 40px rgba(0, 212, 255, 0.1);
+        }
+
+        .kpi-icon { font-size: 1.6em; margin-bottom: 8px; }
+        .kpi-value {
+            font-size: 2em;
+            font-weight: 800;
+            margin: 4px 0;
+            transition: all 0.4s ease;
+        }
+        .kpi-label {
+            font-size: 0.72em;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+        }
+
+        .kpi-value.cyan { color: var(--cyan); }
+        .kpi-value.green { color: var(--green); }
+        .kpi-value.red { color: var(--red); }
+        .kpi-value.yellow { color: var(--yellow); }
+        .kpi-value.magenta { color: var(--magenta); }
+
+        /* ---- CHART GRID ---- */
+        .chart-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        @media (max-width: 1200px) { .chart-grid { grid-template-columns: 1fr; } }
+
+        .chart-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 24px;
+            animation: fadeUp 0.6s ease-out backwards;
+            min-height: 420px;
+        }
+
+        .chart-card.full { grid-column: 1 / -1; }
+
+        .chart-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .chart-header-icon { font-size: 1.2em; }
+        .chart-header-title { font-size: 1.05em; font-weight: 700; color: var(--text-bright); }
+        .chart-body { width: 100%; }
+
+        /* ---- PREDICTIONS TABLE ---- */
+        .predictions-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 6px;
+        }
+
+        .predictions-table thead th {
+            background: rgba(0, 212, 255, 0.08);
+            color: var(--cyan);
+            padding: 12px 16px;
+            font-size: 0.75em;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            text-align: left;
+            border: none;
+        }
+
+        .predictions-table thead th:first-child { border-radius: 10px 0 0 10px; }
+        .predictions-table thead th:last-child { border-radius: 0 10px 10px 0; }
+
+        .predictions-table tbody tr {
+            background: var(--bg-glass);
+            transition: all 0.3s ease;
+        }
+
+        .predictions-table tbody tr:hover {
+            background: rgba(0, 212, 255, 0.06);
+            transform: scale(1.002);
+        }
+
+        .predictions-table tbody tr.new-row {
+            animation: rowSlideIn 0.5s ease-out;
+        }
+
+        @keyframes rowSlideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .predictions-table td {
+            padding: 12px 16px;
+            font-size: 0.88em;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            color: var(--text);
+        }
+
+        .predictions-table td:first-child { border-left: 1px solid var(--border); border-radius: 10px 0 0 10px; }
+        .predictions-table td:last-child { border-right: 1px solid var(--border); border-radius: 0 10px 10px 0; }
+
+        .flight-id { font-weight: 700; color: var(--cyan); }
+
+        .risk-badge {
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.78em;
+            letter-spacing: 0.5px;
+            display: inline-block;
+        }
+
+        .risk-badge.low { background: rgba(0, 255, 136, 0.15); color: var(--green); border: 1px solid rgba(0, 255, 136, 0.3); }
+        .risk-badge.medium { background: rgba(255, 190, 11, 0.15); color: var(--yellow); border: 1px solid rgba(255, 190, 11, 0.3); }
+        .risk-badge.high { background: rgba(255, 51, 102, 0.15); color: var(--red); border: 1px solid rgba(255, 51, 102, 0.3); }
+
+        .risk-pct { font-weight: 700; }
+        .risk-pct.low { color: var(--green); }
+        .risk-pct.medium { color: var(--yellow); }
+        .risk-pct.high { color: var(--red); }
+
+        /* ---- ACTIVITY LOG ---- */
+        .log-container {
+            max-height: 340px;
+            overflow-y: auto;
+            font-family: 'JetBrains Mono', 'Fira Code', monospace;
+            font-size: 0.78em;
+            line-height: 1.9;
+            color: var(--text-dim);
+            padding-right: 8px;
+        }
+
+        .log-container::-webkit-scrollbar { width: 4px; }
+        .log-container::-webkit-scrollbar-track { background: transparent; }
+        .log-container::-webkit-scrollbar-thumb { background: rgba(0, 212, 255, 0.3); border-radius: 4px; }
+
+        .log-entry { padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        .log-entry:first-child { color: var(--text-bright); font-weight: 500; }
+
+        /* ---- CONFUSION MATRIX ---- */
+        .cm-grid {
+            display: grid;
+            grid-template-columns: auto 1fr 1fr;
+            grid-template-rows: auto 1fr 1fr;
+            gap: 8px;
+            max-width: 360px;
+            margin: 30px auto;
+        }
+
+        .cm-corner { }
+        .cm-header {
+            text-align: center;
+            font-weight: 700;
+            font-size: 0.8em;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 8px;
+        }
+
+        .cm-cell {
+            padding: 28px 16px;
+            text-align: center;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 1.4em;
+            transition: transform 0.3s ease;
+        }
+
+        .cm-cell:hover { transform: scale(1.05); }
+
+        .cm-tn { background: rgba(0, 255, 136, 0.15); color: var(--green); border: 1px solid rgba(0, 255, 136, 0.3); }
+        .cm-fp { background: rgba(255, 190, 11, 0.15); color: var(--yellow); border: 1px solid rgba(255, 190, 11, 0.3); }
+        .cm-fn { background: rgba(251, 86, 7, 0.15); color: var(--orange); border: 1px solid rgba(251, 86, 7, 0.3); }
+        .cm-tp { background: rgba(0, 212, 255, 0.15); color: var(--cyan); border: 1px solid rgba(0, 212, 255, 0.3); }
+
+        .cm-label-small { font-size: 0.5em; display: block; margin-top: 4px; font-weight: 500; opacity: 0.7; }
+
+        /* ---- FOOTER ---- */
+        .footer {
+            text-align: center;
+            padding: 30px 20px;
+            color: var(--text-dim);
+            font-size: 0.82em;
+            border-top: 1px solid var(--border);
+            margin-top: 20px;
+        }
+
+        .footer strong { color: var(--text-bright); font-weight: 600; }
+        .footer .name-highlight { color: var(--cyan); }
+
+        /* ---- LOADING ---- */
+        .loading-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--bg-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+
+        .loader {
+            width: 60px; height: 60px;
+            border: 3px solid var(--border);
+            border-top-color: var(--cyan);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading-text { margin-top: 20px; color: var(--text-dim); font-weight: 500; }
+
+        /* ---- REFRESH INDICATOR ---- */
+        .refresh-bar {
+            position: fixed;
+            top: 0; left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--cyan), var(--green), var(--magenta));
+            z-index: 100;
+            animation: refreshBar 5s linear infinite;
+            border-radius: 0 3px 3px 0;
+        }
+
+        @keyframes refreshBar {
+            0% { width: 0%; }
+            100% { width: 100%; }
+        }
+
+        /* Data flash */
+        .data-flash {
+            animation: flash 0.6s ease-out;
+        }
+
+        @keyframes flash {
+            0% { background: rgba(0, 212, 255, 0.15); }
+            100% { background: transparent; }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader"></div>
+        <div class="loading-text">Connecting to Flight Safety System...</div>
+    </div>
+
+    <div class="refresh-bar"></div>
+
+    <div class="app">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-left">
+                <div class="logo">✈</div>
+                <div>
+                    <div class="header-title"><span>Flight Safety</span> Intelligence</div>
+                    <div class="header-subtitle">Continuous ML Risk Prediction • Real-time Dashboard</div>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="live-badge">
+                    <div class="live-dot"></div>
+                    LIVE
+                </div>
+                <div class="cycle-info">
+                    <div class="cycle-num" id="cycleNum">0</div>
+                    <div class="cycle-label">Processing Cycle</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATUS BAR -->
+        <div class="status-bar">
+            <div class="status-text">
+                ✅ System Online — Best Model: <span class="model-name" id="bestModelName">Loading...</span>
+                &nbsp;|&nbsp; Auto-refreshing every 5 seconds
+            </div>
+            <div class="uptime" id="uptimeDisplay">Uptime: --:--:--</div>
+        </div>
+
+        <!-- KPI CARDS -->
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-icon">📊</div>
+                <div class="kpi-value cyan" id="kpiTotalProcessed">0</div>
+                <div class="kpi-label">Flights Processed</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">🔴</div>
+                <div class="kpi-value red" id="kpiHighRisk">0</div>
+                <div class="kpi-label">High Risk Detected</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">🎯</div>
+                <div class="kpi-value green" id="kpiBestAcc">--%</div>
+                <div class="kpi-label">Best Accuracy</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">⚡</div>
+                <div class="kpi-value yellow" id="kpiAvgRisk">--</div>
+                <div class="kpi-label">Avg Risk Score</div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon">🛡️</div>
+                <div class="kpi-value magenta" id="kpiSafeRate">--%</div>
+                <div class="kpi-label">Safe Flight Rate</div>
+            </div>
+        </div>
+
+        <!-- CHARTS ROW 1 -->
+        <div class="chart-grid">
+            <!-- Risk Gauge -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <span class="chart-header-icon">🎯</span>
+                    <span class="chart-header-title">Latest Flight Risk Assessment</span>
+                </div>
+                <div class="chart-body" id="gaugeChart" style="height:340px;"></div>
+            </div>
+
+            <!-- Model Performance -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <span class="chart-header-icon">📈</span>
+                    <span class="chart-header-title">Model Performance Comparison</span>
+                </div>
+                <div class="chart-body" id="modelChart" style="height:340px;"></div>
+            </div>
+
+            <!-- Feature Importance -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <span class="chart-header-icon">🔍</span>
+                    <span class="chart-header-title">Top Risk Factors (Feature Importance)</span>
+                </div>
+                <div class="chart-body" id="featureChart" style="height:340px;"></div>
+            </div>
+
+            <!-- Risk Distribution -->
+            <div class="chart-card">
+                <div class="chart-header">
+                    <span class="chart-header-icon">🍩</span>
+                    <span class="chart-header-title">Risk Distribution</span>
+                </div>
+                <div class="chart-body" id="riskDistChart" style="height:340px;"></div>
+            </div>
+
+            <!-- Prediction History Timeline -->
+            <div class="chart-card full">
+                <div class="chart-header">
+                    <span class="chart-header-icon">📉</span>
+                    <span class="chart-header-title">Risk Prediction Timeline</span>
+                </div>
+                <div class="chart-body" id="historyChart" style="height:300px;"></div>
+            </div>
+        </div>
+
+        <!-- CONFUSION MATRIX + LOG ROW -->
+        <div class="chart-grid">
+            <div class="chart-card">
+                <div class="chart-header">
+                    <span class="chart-header-icon">🧮</span>
+                    <span class="chart-header-title">Confusion Matrix (Test Set)</span>
+                </div>
+                <div class="cm-grid">
+                    <div class="cm-corner"></div>
+                    <div class="cm-header">Pred Safe</div>
+                    <div class="cm-header">Pred Risk</div>
+                    <div class="cm-header" style="writing-mode: vertical-lr; transform: rotate(180deg);">Actual Safe</div>
+                    <div class="cm-cell cm-tn" id="cmTN">--<span class="cm-label-small">True Neg</span></div>
+                    <div class="cm-cell cm-fp" id="cmFP">--<span class="cm-label-small">False Pos</span></div>
+                    <div class="cm-header" style="writing-mode: vertical-lr; transform: rotate(180deg);">Actual Risk</div>
+                    <div class="cm-cell cm-fn" id="cmFN">--<span class="cm-label-small">False Neg</span></div>
+                    <div class="cm-cell cm-tp" id="cmTP">--<span class="cm-label-small">True Pos</span></div>
+                </div>
+            </div>
+
+            <div class="chart-card">
+                <div class="chart-header">
+                    <span class="chart-header-icon">📋</span>
+                    <span class="chart-header-title">Processing Activity Log</span>
+                </div>
+                <div class="log-container" id="activityLog">
+                    <div class="log-entry">Waiting for data...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PREDICTIONS TABLE -->
+        <div class="chart-card full" style="margin-bottom: 24px;">
+            <div class="chart-header">
+                <span class="chart-header-icon">🛫</span>
+                <span class="chart-header-title">Live Flight Risk Predictions</span>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="predictions-table">
+                    <thead>
+                        <tr>
+                            <th>Flight ID</th>
+                            <th>Route</th>
+                            <th>Aircraft</th>
+                            <th>Risk %</th>
+                            <th>Level</th>
+                            <th>Action</th>
+                            <th>Weather</th>
+                            <th>Wind (km/h)</th>
+                            <th>Maint. Days</th>
+                            <th>Pilot Exp.</th>
+                            <th>Time</th>
+                        </tr>
+                    </thead>
+                    <tbody id="predictionsBody">
+                        <tr><td colspan="11" style="text-align:center;color:var(--text-dim);padding:40px;">Waiting for predictions...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            <p><strong>Developed by:</strong> <span class="name-highlight">Syamala Gowtham Reddy</span></p>
+            <p style="margin-top: 4px;">Sathyabama Institute of Science and Technology • B.E. Computer Science & Engineering (Data Science)</p>
+            <p style="margin-top: 8px; font-size: 0.9em;">Integrated Flight Safety & Risk Analysis System • Machine Learning Powered</p>
+        </div>
+    </div>
+
+    <script>
+    // =========================================================================
+    // DASHBOARD CONTROLLER
+    // =========================================================================
+    const REFRESH_MS = 5000;
+    let previousCycle = -1;
+    let chartLayout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: 'Inter', color: '#8892b0', size: 12 },
+        margin: { l: 50, r: 30, t: 20, b: 50 },
+        xaxis: { gridcolor: 'rgba(255,255,255,0.04)', zerolinecolor: 'rgba(255,255,255,0.06)' },
+        yaxis: { gridcolor: 'rgba(255,255,255,0.04)', zerolinecolor: 'rgba(255,255,255,0.06)' },
+    };
+
+    // --- Helper: format uptime ---
+    function formatUptime(seconds) {
+        const h = Math.floor(seconds / 3600);
+        const m = Math.floor((seconds % 3600) / 60);
+        const s = seconds % 60;
+        return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    }
+
+    // --- Helper: animate number ---
+    function animateValue(el, newVal, suffix = '') {
+        const current = parseFloat(el.textContent) || 0;
+        if (current === newVal) return;
+        const diff = newVal - current;
+        const steps = 20;
+        const stepVal = diff / steps;
+        let step = 0;
+        const timer = setInterval(() => {
+            step++;
+            const v = current + stepVal * step;
+            el.textContent = (Number.isInteger(newVal) ? Math.round(v) : v.toFixed(1)) + suffix;
+            if (step >= steps) {
+                el.textContent = (Number.isInteger(newVal) ? newVal : newVal.toFixed(1)) + suffix;
+                clearInterval(timer);
+            }
+        }, 20);
+    }
+
+    // =========================================================================
+    // UPDATE DASHBOARD
+    // =========================================================================
+    async function updateDashboard() {
+        try {
+            const resp = await fetch('/api/dashboard');
+            if (!resp.ok) return;
+            const data = await resp.json();
+
+            // Hide loading overlay on first data
+            const overlay = document.getElementById('loadingOverlay');
+            if (!overlay.classList.contains('hidden')) overlay.classList.add('hidden');
+
+            const isNew = data.cycle !== previousCycle;
+            previousCycle = data.cycle;
+
+            // --- Header ---
+            document.getElementById('cycleNum').textContent = data.cycle;
+            document.getElementById('bestModelName').textContent = data.best_model || '--';
+            document.getElementById('uptimeDisplay').textContent = 'Uptime: ' + formatUptime(data.uptime || 0);
+
+            // --- KPI Cards ---
+            animateValue(document.getElementById('kpiTotalProcessed'), data.total_processed || 0);
+            animateValue(document.getElementById('kpiHighRisk'), data.high_risk_total || 0);
+
+            const bestAcc = data.models && data.best_model && data.models[data.best_model]
+                ? data.models[data.best_model].accuracy : 0;
+            document.getElementById('kpiBestAcc').textContent = bestAcc + '%';
+
+            // Avg risk from recent predictions
+            let avgRisk = 0;
+            if (data.predictions && data.predictions.length > 0) {
+                avgRisk = data.predictions.reduce((s, p) => s + p.risk, 0) / data.predictions.length;
+            }
+            document.getElementById('kpiAvgRisk').textContent = avgRisk.toFixed(1) + '%';
+
+            // Safe rate
+            const safeRate = data.total_processed > 0
+                ? (((data.total_processed - data.high_risk_total) / data.total_processed) * 100).toFixed(1)
+                : '0.0';
+            document.getElementById('kpiSafeRate').textContent = safeRate + '%';
+
+            // --- Risk Gauge ---
+            if (data.predictions && data.predictions.length > 0) {
+                const latest = data.predictions[0];
+                const gaugeColor = latest.risk < 30 ? '#00ff88' : latest.risk < 70 ? '#ffbe0b' : '#ff3366';
+                Plotly.react('gaugeChart', [{
+                    type: 'indicator',
+                    mode: 'gauge+number+delta',
+                    value: latest.risk,
+                    number: { suffix: '%', font: { size: 42, color: '#e8eaed', family: 'Inter' } },
+                    title: { text: latest.id + ' — ' + latest.route, font: { size: 14, color: '#8892b0' } },
+                    gauge: {
+                        axis: { range: [0, 100], tickcolor: '#8892b0', tickfont: { color: '#8892b0' } },
+                        bar: { color: gaugeColor, thickness: 0.3 },
+                        bgcolor: 'rgba(255,255,255,0.03)',
+                        bordercolor: 'rgba(255,255,255,0.06)',
+                        steps: [
+                            { range: [0, 30], color: 'rgba(0,255,136,0.08)' },
+                            { range: [30, 70], color: 'rgba(255,190,11,0.08)' },
+                            { range: [70, 100], color: 'rgba(255,51,102,0.08)' }
+                        ],
+                        threshold: { line: { color: '#ff006e', width: 3 }, thickness: 0.8, value: latest.risk }
+                    }
+                }], {
+                    ...chartLayout,
+                    margin: { l: 30, r: 30, t: 50, b: 10 },
+                    height: 340,
+                }, { responsive: true, displayModeBar: false });
+            }
+
+            // --- Model Performance ---
+            if (data.models) {
+                const names = Object.keys(data.models);
+                const accs = names.map(n => data.models[n].accuracy);
+                const f1s = names.map(n => data.models[n].f1_score);
+                const aucs = names.map(n => data.models[n].roc_auc);
+
+                Plotly.react('modelChart', [
+                    {
+                        x: names, y: accs, name: 'Accuracy', type: 'bar',
+                        marker: { color: '#00d4ff', line: { width: 0 } },
+                        text: accs.map(v => v + '%'), textposition: 'outside',
+                        textfont: { color: '#00d4ff', size: 11 },
+                    },
+                    {
+                        x: names, y: f1s, name: 'F1 Score', type: 'bar',
+                        marker: { color: '#ff006e', line: { width: 0 } },
+                        text: f1s.map(v => v + '%'), textposition: 'outside',
+                        textfont: { color: '#ff006e', size: 11 },
+                    },
+                    {
+                        x: names, y: aucs, name: 'ROC-AUC', type: 'bar',
+                        marker: { color: '#00ff88', line: { width: 0 } },
+                        text: aucs.map(v => v + '%'), textposition: 'outside',
+                        textfont: { color: '#00ff88', size: 11 },
+                    }
+                ], {
+                    ...chartLayout,
+                    barmode: 'group',
+                    yaxis: { ...chartLayout.yaxis, range: [0, 110], title: { text: '%', font: { color: '#8892b0' } } },
+                    legend: { font: { color: '#8892b0' }, orientation: 'h', y: -0.2 },
+                    height: 340,
+                }, { responsive: true, displayModeBar: false });
+            }
+
+            // --- Feature Importance ---
+            if (data.features && data.features.length > 0) {
+                const fNames = data.features.map(f => f.feature).reverse();
+                const fVals = data.features.map(f => f.importance).reverse();
+
+                Plotly.react('featureChart', [{
+                    y: fNames, x: fVals,
+                    type: 'bar', orientation: 'h',
+                    marker: {
+                        color: fVals,
+                        colorscale: [[0, '#0a0e27'], [0.3, '#00d4ff'], [0.7, '#ff006e'], [1, '#ff3366']],
+                        line: { width: 0 }
+                    },
+                    text: fVals.map(v => v.toFixed(1) + '%'),
+                    textposition: 'outside',
+                    textfont: { color: '#e8eaed', size: 11 },
+                }], {
+                    ...chartLayout,
+                    margin: { l: 180, r: 60, t: 10, b: 40 },
+                    xaxis: { ...chartLayout.xaxis, title: { text: 'Importance (%)', font: { color: '#8892b0' } } },
+                    height: 340,
+                }, { responsive: true, displayModeBar: false });
+            }
+
+            // --- Risk Distribution Donut ---
+            if (data.risk_distribution) {
+                const rd = data.risk_distribution;
+                Plotly.react('riskDistChart', [{
+                    values: [rd.Low || 0, rd.Medium || 0, rd.High || 0],
+                    labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+                    type: 'pie',
+                    hole: 0.55,
+                    marker: {
+                        colors: ['#00ff88', '#ffbe0b', '#ff3366'],
+                        line: { color: '#0a0e27', width: 3 }
+                    },
+                    textinfo: 'label+percent',
+                    textfont: { color: '#e8eaed', size: 12, family: 'Inter' },
+                    hoverinfo: 'label+value+percent',
+                    pull: [0, 0, 0.05],
+                }], {
+                    ...chartLayout,
+                    margin: { l: 20, r: 20, t: 20, b: 20 },
+                    showlegend: true,
+                    legend: { font: { color: '#8892b0', size: 12 }, orientation: 'h', y: -0.1 },
+                    height: 340,
+                    annotations: [{
+                        text: `<b>${(rd.Low||0) + (rd.Medium||0) + (rd.High||0)}</b><br>Total`,
+                        showarrow: false,
+                        font: { size: 18, color: '#e8eaed', family: 'Inter' },
+                    }],
+                }, { responsive: true, displayModeBar: false });
+            }
+
+            // --- History Timeline ---
+            if (data.history && data.history.length > 0) {
+                const hCycles = data.history.map(h => h.cycle);
+                const hRisks = data.history.map(h => h.risk);
+                const hColors = data.history.map(h =>
+                    h.risk < 30 ? '#00ff88' : h.risk < 70 ? '#ffbe0b' : '#ff3366'
+                );
+
+                Plotly.react('historyChart', [
+                    {
+                        x: hCycles, y: hRisks,
+                        type: 'scatter', mode: 'lines',
+                        line: { color: '#00d4ff', width: 2, shape: 'spline' },
+                        fill: 'tozeroy',
+                        fillcolor: 'rgba(0, 212, 255, 0.05)',
+                        name: 'Risk %',
+                    },
+                    {
+                        x: hCycles, y: hRisks,
+                        type: 'scatter', mode: 'markers',
+                        marker: { color: hColors, size: 6, line: { color: '#0a0e27', width: 1 } },
+                        name: 'Data Points',
+                        showlegend: false,
+                    },
+                    {
+                        x: [hCycles[0], hCycles[hCycles.length - 1]],
+                        y: [30, 30],
+                        type: 'scatter', mode: 'lines',
+                        line: { color: 'rgba(255,190,11,0.4)', width: 1, dash: 'dash' },
+                        name: 'Low/Med Threshold',
+                        showlegend: false,
+                    },
+                    {
+                        x: [hCycles[0], hCycles[hCycles.length - 1]],
+                        y: [70, 70],
+                        type: 'scatter', mode: 'lines',
+                        line: { color: 'rgba(255,51,102,0.4)', width: 1, dash: 'dash' },
+                        name: 'Med/High Threshold',
+                        showlegend: false,
+                    }
+                ], {
+                    ...chartLayout,
+                    xaxis: { ...chartLayout.xaxis, title: { text: 'Processing Cycle', font: { color: '#8892b0' } } },
+                    yaxis: { ...chartLayout.yaxis, title: { text: 'Risk %', font: { color: '#8892b0' } }, range: [0, 105] },
+                    legend: { font: { color: '#8892b0' }, orientation: 'h', y: -0.25 },
+                    height: 300,
+                }, { responsive: true, displayModeBar: false });
+            }
+
+            // --- Confusion Matrix ---
+            if (data.confusion_matrix && data.confusion_matrix.length === 2) {
+                const cm = data.confusion_matrix;
+                document.getElementById('cmTN').innerHTML = cm[0][0] + '<span class="cm-label-small">True Neg</span>';
+                document.getElementById('cmFP').innerHTML = cm[0][1] + '<span class="cm-label-small">False Pos</span>';
+                document.getElementById('cmFN').innerHTML = cm[1][0] + '<span class="cm-label-small">False Neg</span>';
+                document.getElementById('cmTP').innerHTML = cm[1][1] + '<span class="cm-label-small">True Pos</span>';
+            }
+
+            // --- Activity Log ---
+            if (data.activity_log && data.activity_log.length > 0) {
+                const logEl = document.getElementById('activityLog');
+                logEl.innerHTML = data.activity_log
+                    .map((entry, i) => `<div class="log-entry${i === 0 && isNew ? ' data-flash' : ''}">${entry}</div>`)
+                    .join('');
+            }
+
+            // --- Predictions Table ---
+            if (data.predictions && data.predictions.length > 0) {
+                const tbody = document.getElementById('predictionsBody');
+                tbody.innerHTML = data.predictions.map((p, i) => {
+                    const lvl = p.level.toLowerCase();
+                    return `<tr class="${i === 0 && isNew ? 'new-row' : ''}">
+                        <td><span class="flight-id">${p.id}</span></td>
+                        <td>${p.route}</td>
+                        <td>${p.aircraft}</td>
+                        <td><span class="risk-pct ${lvl}">${p.risk}%</span></td>
+                        <td><span class="risk-badge ${lvl}">${p.level}</span></td>
+                        <td>${p.action}</td>
+                        <td>${p.weather}/10</td>
+                        <td>${p.wind}</td>
+                        <td>${p.maintenance_days}d</td>
+                        <td>${p.pilot_exp}h</td>
+                        <td>${p.time}</td>
+                    </tr>`;
+                }).join('');
+            }
+
+        } catch (err) {
+            console.warn('Dashboard update failed:', err);
+        }
+    }
+
+    // =========================================================================
+    // INIT
+    // =========================================================================
+    updateDashboard();
+    setInterval(updateDashboard, REFRESH_MS);
+    </script>
+</body>
+</html>
